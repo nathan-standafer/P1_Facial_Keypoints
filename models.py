@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 # can use the below import should you choose to initialize the weights of your Net
 import torch.nn.init as I
-
+import math
 
 class Net(nn.Module):
 
@@ -23,13 +23,23 @@ class Net(nn.Module):
         self.conv1 = nn.Conv2d(1, 32, 5)
         self.conv2 = nn.Conv2d(32, 64, 5)
         self.conv2_bn = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
+        self.conv3_bn = nn.BatchNorm2d(128)
         
         self.pool = nn.MaxPool2d(2, 2)
         self.drop = nn.Dropout(p=0.25)
         
         #assume 224 X 224 image  size
-        final_dim = (((224-4)/2) - 4) / 2
-        self.flattened_size = int(64 * final_dim**2)
+        
+        final_dim = 224
+        final_dim = (final_dim - 4) / 2 #conv1: conv with 5x5 window and and maxpool  of 2X2
+        print("final_dim: {}".format(final_dim))
+        final_dim = (final_dim - 4) / 2 #conv2: conv with 5x5 window and and maxpool  of 2X2
+        print("final_dim: {}".format(final_dim))
+        final_dim = math.floor((final_dim - 0) / 2) #conv3: conv with 3x3 window and and maxpool  of 2X2
+        print("final_dim: {}".format(final_dim))
+        
+        self.flattened_size = int(128 * final_dim**2)
         
         self.fc1 = nn.Linear(self.flattened_size , 256)
         self.fc1_bn = nn.BatchNorm1d(256)
@@ -46,6 +56,7 @@ class Net(nn.Module):
         ## x is the input image and, as an example, here you may choose to include a pool/conv step:
         x = self.pool(self.leakyRelu(self.conv1(x)))
         x = self.pool(self.conv2_bn(self.leakyRelu(self.conv2(x))))
+        x = self.pool(self.conv3_bn(self.leakyRelu(self.conv3(x))))
         #print("x.shape after conv2 and pooling: {}".format(x.shape))
         
         #flatten
